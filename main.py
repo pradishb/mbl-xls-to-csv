@@ -69,8 +69,17 @@ def parse_statement():
     return rows
 
 
-if __name__ == "__main__":
+def main():
+    current_balance = input("Current balance of the account (optional): ")
     statement = parse_statement()
+    if current_balance:
+        try:
+            balance_list = [str(s["balance"]) for s in statement]
+            idx = balance_list.index(current_balance)
+            statement = statement[idx + 1 :]
+        except ValueError:
+            print(f"Balance {current_balance} missing in the statement.")
+            return
     with open("transaction_reference.json") as fp:
         ref = json.load(fp)
     with open("output.csv", "w", newline="") as fp:
@@ -98,4 +107,20 @@ if __name__ == "__main__":
                     )
                     break
             else:
-                print(r["description"], "not found in reference")
+                print(s["description"], "not found in reference")
+                writer.writerow(
+                    [
+                        s["date"],
+                        4,
+                        "",
+                        "",
+                        s["description"],
+                        s["debit"] * -1,
+                        "",
+                        "",
+                    ]
+                )
+
+
+if __name__ == "__main__":
+    main()
