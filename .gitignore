@@ -162,3 +162,5 @@ cython_debug/
 transaction_reference.json
 input.pdf
 output.csv
+stock.csv
+*.xls

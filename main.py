@@ -1,81 +1,33 @@
 import csv
 import json
-import re
+from argparse import ArgumentParser
+from decimal import Decimal
+from pathlib import Path
 
-from PyPDF2 import PdfReader
-
-date_re = "(\d{2})-(\d{2})-(\d{4})"
-number_re = "[\d,]+\.\d+|-"
-
-
-def get_date(parts):
-    while parts:
-        p = parts.pop(0)
-        match = re.fullmatch(date_re, p)
-        if match:
-            # convert to m-d-y
-            return match.group(2) + "-" + match.group(1) + "-" + match.group(3)
-    return ""
-
-
-def get_description(parts):
-    desc = []
-    while parts:
-        p = parts.pop(0)
-        date = re.fullmatch(date_re, p)
-        number = re.fullmatch(number_re, p)
-        if date is None and number is None:
-            desc.append(p)
-        else:
-            parts.insert(0, p)
-            return "".join(desc).replace(" ", "")
-    return ""
-
-
-def get_number(parts):
-    while parts:
-        p = parts.pop(0)
-        if re.fullmatch(number_re, p):
-            return float(p.replace(",", "").replace("-", "0"))
-    return ""
-
-
-def get_parts():
-    parts = []
-
-    def func(text, *args):
-        if text:
-            parts.append(text.strip())
-
-    reader = PdfReader("input.pdf")
-    for page in reader.pages:
-        page.extract_text(visitor_text=func)
-    return parts
-
-
-def parse_statement():
-    parts = get_parts()
-    rows = []
-    while parts:
-        row = {
-            "date": get_date(parts),
-            "description": get_description(parts),
-            "debit": get_number(parts),
-            "credit": get_number(parts),
-            "balance": get_number(parts),
-        }
-        if row["date"]:
-            rows.append(row)
-    return rows
+from pdf import parse_statement_from_pdf
+from xls import parse_statement_from_xls
 
 
 def main():
-    current_balance = input("Current balance of the account (optional): ")
-    statement = parse_statement()
+    parser = ArgumentParser()
+    parser.add_argument("input")
+    parser.add_argument("--start")
+    args = parser.parse_args()
+    file_path = Path(args.input)
+
+    if file_path.suffix not in [".xls", ".pdf"]:
+        print("Invalid input format")
+        return
+
+    current_balance = args.start
+    if file_path.suffix == ".pdf":
+        statement = parse_statement_from_pdf(file_path)
+    else:
+        statement = parse_statement_from_xls(file_path)
     if current_balance:
         try:
-            balance_list = [str(s["balance"]) for s in statement]
-            idx = balance_list.index(current_balance)
+            balance_list = [s["balance"] for s in statement]
+            idx = balance_list.index(Decimal(current_balance))
             statement = statement[idx + 1 :]
         except ValueError:
             print(f"Balance {current_balance} missing in the statement.")
@@ -88,38 +40,66 @@ def main():
             if s["debit"] > 0 and s["credit"] > 0:
                 print("bad row, debit and credit both greater than 0", r)
                 continue
-            if s["credit"] > 0:
-                print("credit is not supported", s)
-                continue
-            for r in ref:
-                if r["substring"] in s["description"]:
+            elif s["credit"] > 0:
+                for r in ref:
+                    if r["substring"] in s["description"]:
+                        writer.writerow(
+                            [
+                                s["date"],
+                                4,
+                                "",
+                                "",
+                                "".join([r["memo"], s["description"]]),
+                                s["credit"],
+                                r["category"],
+                                "",
+                            ]
+                        )
+                        break
+                else:
+                    print("Not found in reference", s)
                     writer.writerow(
                         [
                             s["date"],
                             4,
                             "",
                             "",
-                            ",".join([r["memo"], s["description"]]),
-                            s["debit"] * -1,
-                            r["category"],
+                            s["description"],
+                            s["credit"],
+                            "",
                             "",
                         ]
                     )
-                    break
-            else:
-                print(s["description"], "not found in reference")
-                writer.writerow(
-                    [
-                        s["date"],
-                        4,
-                        "",
-                        "",
-                        s["description"],
-                        s["debit"] * -1,
-                        "",
-                        "",
-                    ]
-                )
+            elif s["debit"] > 0:
+                for r in ref:
+                    if r["substring"] in s["description"]:
+                        writer.writerow(
+                            [
+                                s["date"],
+                                4,
+                                "",
+                                "",
+                                ", ".join([r["memo"], s["description"]]),
+                                s["debit"] * -1,
+                                r["category"],
+                                "",
+                            ]
+                        )
+                        break
+                else:
+                    print("Not found in reference", s)
+                    writer.writerow(
+                        [
+                            s["date"],
+                            4,
+                            "",
+                            "",
+                            s["description"],
+                            s["debit"] * -1,
+                            "",
+                            "",
+                        ]
+                    )
 
 
 if __name__ == "__main__":
