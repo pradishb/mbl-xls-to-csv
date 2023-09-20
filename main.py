@@ -8,6 +8,10 @@ from pdf import parse_statement_from_pdf
 from xls import parse_statement_from_xls
 
 
+def get_is_substr(sub: str, text: str):
+    return sub.replace(" ", "").upper() in text.replace(" ", "").upper()
+
+
 def main():
     parser = ArgumentParser()
     parser.add_argument("input")
@@ -32,8 +36,11 @@ def main():
         except ValueError:
             print(f"Balance {current_balance} missing in the statement.")
             return
-    with open("transaction_reference.json") as fp:
-        ref = json.load(fp)
+    try:
+        with open("transaction_reference.json") as fp:
+            ref = json.load(fp)
+    except FileNotFoundError:
+        ref = []
     with open("output.csv", "w", newline="") as fp:
         writer = csv.writer(fp, delimiter=";")
         for s in statement:
@@ -42,7 +49,7 @@ def main():
                 continue
             elif s["credit"] > 0:
                 for r in ref:
-                    if r["substring"] in s["description"]:
+                    if get_is_substr(r["substring"], s["description"]):
                         writer.writerow(
                             [
                                 s["date"],
@@ -72,7 +79,7 @@ def main():
                     )
             elif s["debit"] > 0:
                 for r in ref:
-                    if r["substring"] in s["description"]:
+                    if get_is_substr(r["substring"], s["description"]):
                         writer.writerow(
                             [
                                 s["date"],
