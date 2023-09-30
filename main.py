@@ -30,6 +30,7 @@ def main():
         statement = parse_statement_from_xls(file_path)
     if current_balance:
         try:
+            current_balance = current_balance.replace(",", "")
             balance_list = [s["balance"] for s in statement]
             idx = balance_list.index(Decimal(current_balance))
             statement = statement[idx + 1 :]
