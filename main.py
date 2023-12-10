@@ -16,6 +16,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("input")
     parser.add_argument("--start")
+    parser.add_argument("--delimiter", default="\t")
     args = parser.parse_args()
     file_path = Path(args.input)
 
@@ -43,7 +44,7 @@ def main():
     except FileNotFoundError:
         ref = []
     with open("output.csv", "w", newline="") as fp:
-        writer = csv.writer(fp, delimiter=";")
+        writer = csv.writer(fp, delimiter=args.delimiter)
         for s in statement:
             if s["debit"] > 0 and s["credit"] > 0:
                 print("bad row, debit and credit both greater than 0", r)
