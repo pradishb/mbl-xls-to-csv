@@ -15,7 +15,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("input")
     parser.add_argument("--start")
-    parser.add_argument("--delimiter", default="\t")
+    parser.add_argument("--delimiter", default=",")
     args = parser.parse_args()
     file_path = Path(args.input)
 
