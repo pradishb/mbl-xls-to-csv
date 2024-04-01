@@ -1,5 +1,4 @@
 import csv
-import json
 from argparse import ArgumentParser
 from decimal import Decimal
 from pathlib import Path
@@ -38,77 +37,38 @@ def main():
         except ValueError:
             print(f"Balance {current_balance} missing in the statement.")
             return
-    try:
-        with open("transaction_reference.json") as fp:
-            ref = json.load(fp)
-    except FileNotFoundError:
-        ref = []
     with open("output.csv", "w", newline="") as fp:
         writer = csv.writer(fp, delimiter=args.delimiter)
         for s in statement:
             if s["debit"] > 0 and s["credit"] > 0:
-                print("bad row, debit and credit both greater than 0", r)
+                print("bad row, debit and credit both greater than 0", s)
                 continue
             elif s["credit"] > 0:
-                for r in ref:
-                    if get_is_substr(r["substring"], s["description"]):
-                        writer.writerow(
-                            [
-                                s["date"],
-                                4,
-                                "",
-                                "",
-                                "".join([r["memo"], s["description"]]),
-                                s["credit"],
-                                r["category"],
-                                "",
-                            ]
-                        )
-                        break
-                else:
-                    print("Not found in reference", s)
-                    writer.writerow(
-                        [
-                            s["date"],
-                            4,
-                            "",
-                            "",
-                            s["description"],
-                            s["credit"],
-                            "",
-                            "",
-                        ]
-                    )
+                writer.writerow(
+                    [
+                        s["date"],
+                        4,
+                        "",
+                        "",
+                        s["description"],
+                        s["credit"],
+                        "",
+                        "",
+                    ]
+                )
             elif s["debit"] > 0:
-                for r in ref:
-                    if get_is_substr(r["substring"], s["description"]):
-                        writer.writerow(
-                            [
-                                s["date"],
-                                4,
-                                "",
-                                "",
-                                ", ".join([r["memo"], s["description"]]),
-                                s["debit"] * -1,
-                                r["category"],
-                                "",
-                            ]
-                        )
-                        break
-                else:
-                    print("Not found in reference", s)
-                    writer.writerow(
-                        [
-                            s["date"],
-                            4,
-                            "",
-                            "",
-                            s["description"],
-                            s["debit"] * -1,
-                            "",
-                            "",
-                        ]
-                    )
+                writer.writerow(
+                    [
+                        s["date"],
+                        4,
+                        "",
+                        "",
+                        s["description"],
+                        s["debit"] * -1,
+                        "",
+                        "",
+                    ]
+                )
 
 
 if __name__ == "__main__":
