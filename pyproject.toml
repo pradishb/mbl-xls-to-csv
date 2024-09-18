@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=70.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mbl-xls-to-csv"
+requires-python = ">=3"
+authors = [{ name = "Pradish Bijukchhe", email = "pradish@sandbox.com.np" }]
+description = "Convert MBL bank XLS statement to CSV for homebank"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = []
+classifiers = ["Programming Language :: Python :: 3"]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/sandbox-pokhara/mbl-xls-to-csv"
+Issues = "https://github.com/sandbox-pokhara/mbl-xls-to-csv/issues"
+
+[project.scripts]
+mbl-xls-to-csv = "mbl_xls_to_csv.__main__:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"mbl_xls_to_csv" = "mbl_xls_to_csv"
+
+[tool.setuptools.dynamic]
+version = { attr = "mbl_xls_to_csv.__version__" }
+dependencies = { file = "requirements.txt" }
+
+[tool.isort]
+line_length = 79
+force_single_line = true
+
+[tool.black]
+line-length = 79
+preview = true
+
+[tool.pyright]
+include = ["mbl_xls_to_csv", "test.py"]
+typeCheckingMode = "strict"

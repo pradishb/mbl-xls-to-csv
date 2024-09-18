@@ -3,8 +3,7 @@ from argparse import ArgumentParser
 from decimal import Decimal
 from pathlib import Path
 
-from pdf import parse_statement_from_pdf
-from xls import parse_statement_from_xls
+from mbl_xls_to_csv.xls import parse_statement_from_xls
 
 
 def get_is_substr(sub: str, text: str):
@@ -24,14 +23,11 @@ def main():
         return
 
     current_balance = args.start
-    if file_path.suffix == ".pdf":
-        statement = parse_statement_from_pdf(file_path)
-    else:
-        statement = parse_statement_from_xls(file_path)
+    statement = parse_statement_from_xls(file_path)
     if current_balance:
         try:
             current_balance = current_balance.replace(",", "")
-            balance_list = [s["balance"] for s in statement]
+            balance_list = [s.balance for s in statement]
             idx = balance_list.index(Decimal(current_balance))
             statement = statement[idx + 1 :]
         except ValueError:
@@ -40,31 +36,31 @@ def main():
     with open("output.csv", "w", newline="") as fp:
         writer = csv.writer(fp, delimiter=args.delimiter)
         for s in statement:
-            if s["debit"] > 0 and s["credit"] > 0:
+            if s.debit > 0 and s.credit > 0:
                 print("bad row, debit and credit both greater than 0", s)
                 continue
-            elif s["credit"] > 0:
+            elif s.credit > 0:
                 writer.writerow(
                     [
-                        s["date"],
+                        s.date,
                         4,
                         "",
                         "",
-                        s["description"],
-                        s["credit"],
+                        s.description,
+                        s.credit,
                         "",
                         "",
                     ]
                 )
-            elif s["debit"] > 0:
+            elif s.debit > 0:
                 writer.writerow(
                     [
-                        s["date"],
+                        s.date,
                         4,
                         "",
                         "",
-                        s["description"],
-                        s["debit"] * -1,
+                        s.description,
+                        s.debit * -1,
                         "",
                         "",
                     ]
